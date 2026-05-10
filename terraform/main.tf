@@ -41,12 +41,29 @@ resource "aws_security_group" "fintech_sg" {
   }
 }
 
+
+data "aws_ami" "ubuntu" {
+  most_recent = true
+
+  owners = ["099720109477"]
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 # -----------------------------
 # EC2 Instance
 # -----------------------------
 resource "aws_instance" "fintech_ec2" {
 
-  ami                    = "ami-0c1c30571d2dae5c9"
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.micro"
   key_name               = var.key_name
   vpc_security_group_ids = [aws_security_group.fintech_sg.id]
@@ -56,7 +73,9 @@ resource "aws_instance" "fintech_ec2" {
 
               apt update -y
 
-              apt install docker.io docker-compose git -y
+              apt-get install -y docker.io
+              apt-get install -y docker-compose
+              apt-get install -y git
 
               systemctl start docker
               systemctl enable docker
@@ -67,9 +86,11 @@ resource "aws_instance" "fintech_ec2" {
 
               git clone ${var.github_repo}
 
-              cd FinTech-App-Unir
+              cd contenedores-prt2
 
               docker compose up -d --build
+
+              docker compose up -d --build > deploy.log 2>&1
 
               EOF
 
