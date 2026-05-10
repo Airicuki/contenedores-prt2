@@ -1,0 +1,28 @@
+# Node
+node_modules/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Docker
+docker-data/
+postgres-data/
+
+# Build
+build/
+dist/
+
+# Logs
+*.log
+
+# AWS Keys
+*.pem
+
+# VSCode
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
