@@ -41,7 +41,9 @@ resource "aws_security_group" "fintech_sg" {
   }
 }
 
-
+# -----------------------------
+# Ubuntu AMI
+# -----------------------------
 data "aws_ami" "ubuntu" {
   most_recent = true
 
@@ -69,30 +71,31 @@ resource "aws_instance" "fintech_ec2" {
   vpc_security_group_ids = [aws_security_group.fintech_sg.id]
 
   user_data = <<-EOF
-              #!/bin/bash
+#!/bin/bash
 
-              apt update -y
+apt-get update -y
 
-              apt-get install -y docker.io
-              apt-get install -y docker-compose
-              apt-get install -y git
+apt-get install -y docker.io docker-compose git
 
-              systemctl start docker
-              systemctl enable docker
+systemctl enable docker
+systemctl start docker
 
-              usermod -aG docker ubuntu
+usermod -aG docker ubuntu
 
-              cd /home/ubuntu
+cd /home/ubuntu
 
-              git clone ${var.github_repo}
+git clone ${var.github_repo}
 
-              cd contenedores-prt2
+echo '#!/bin/bash' > /home/ubuntu/start.sh
+echo 'sleep 30' >> /home/ubuntu/start.sh
+echo 'cd /home/ubuntu/contenedores-prt2' >> /home/ubuntu/start.sh
+echo 'docker-compose up -d --build > /home/ubuntu/deploy.log 2>&1' >> /home/ubuntu/start.sh
 
-              docker compose up -d --build
+chmod +x /home/ubuntu/start.sh
 
-              docker compose up -d --build > deploy.log 2>&1
+nohup bash /home/ubuntu/start.sh &
 
-              EOF
+EOF
 
   tags = {
     Name = "FinTech-Docker-Compose"
