@@ -1,0 +1,44 @@
+services:
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - fintech-network
+
+  backend:
+    build: ./backend
+    command: sh -c "sleep 10 && node server.js"
+    ports:
+      - "3001:3001"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: fintech_db
+      DB_USER: fintech_user
+      DB_PASSWORD: fintech_pass123
+    depends_on:
+      - db
+    networks:
+      - fintech-network
+
+  db:
+    image: postgres:15
+    container_name: postgres-db
+    environment:
+      POSTGRES_DB: fintech_db
+      POSTGRES_USER: fintech_user
+      POSTGRES_PASSWORD: fintech_pass123
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - fintech-network
+
+volumes:
+  postgres-data:
+
+networks:
+  fintech-network:
