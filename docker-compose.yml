@@ -1,44 +1,53 @@
+#Define los contenedores que forman parte de la aplicación completa
 services:
-
+  #Servicio encargado de la parte de React
   frontend:
+    #Docker compose construye la imagen utilizando el Dockerfile ubicado en esa carpeta
     build: ./frontend
+    #Mapea el puerto 8080 de la EC2 hacia el puerto 80 del contenedor, que es donde se ejecuta la aplicación React
+    #Así, podemos acceder a la aplicación desde el navegador utilizando la IP pública de la EC2 seguida del puerto 8080
     ports:
       - "8080:80"
+    #Indica que el frontend depende del backend y debe iniciarse después
     depends_on:
       - backend
+    #Conecta el contenedor frontend a la red interna Docker llamada fintech-network
     networks:
       - fintech-network
-
+  #Servicio encargado de la parte de Node.js
   backend:
     build: ./backend
+    #Sobreescribe el comando de inicio para retrasar la ejecución del servidor Node.js, asegurando que la base de datos esté lista antes de que el backend intente conectarse
     command: sh -c "sleep 10 && node server.js"
+    #Expone el puerto 3001 de la EC2 hacia el puerto 3001 del contenedor, que es donde se ejecuta el servidor Node.js
     ports:
       - "3001:3001"
+    #Define variables de entorno usadas por la aplicación backend
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_NAME: fintech_db
-      DB_USER: fintech_user
-      DB_PASSWORD: fintech_pass123
+      DB_HOST: db #Nombre del servicio PostgreSWL dentro de Docker Compose
+      DB_PORT: 5432 #Puerto estándar de PostgreSQL
+      DB_NAME: fintech_db #Nombre de la base de datos que se creó en el contenedor db
+      DB_USER: fintech_user #Usuario de la base de datos definido en el contenedor db
+      DB_PASSWORD: fintech_pass123 #Contraseña de la base de datos definida en el contenedor db
     depends_on:
       - db
     networks:
       - fintech-network
 
-  db:
-    image: postgres:15
-    container_name: postgres-db
+  db: #Servicio encargado de la base de datos PostgreSQL
+    image: postgres:15 #Utiliza la imagen oficial de PostgreSQL versión 15 desde Docker Hub
+    container_name: postgres-db #Nombre del contenedor para facilitar su identificación
     environment:
-      POSTGRES_DB: fintech_db
-      POSTGRES_USER: fintech_user
-      POSTGRES_PASSWORD: fintech_pass123
+      POSTGRES_DB: fintech_db #Nombre de la base de datos que se creará automáticamente al iniciar el contenedor
+      POSTGRES_USER: fintech_user #Usuario que se creará automáticamente con permisos para acceder a la base de datos
+      POSTGRES_PASSWORD: fintech_pass123 #Contraseña para el usuario de la base de datos
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data #Montaje de un volumen persistente para almacenar los datos de la base de datos, asegurando que no se pierdan al reiniciar el contenedor
     networks:
-      - fintech-network
+      - fintech-network #Conecta el contenedor de la base de datos a la red interna Docker llamada fintech-network para permitir la comunicación con el backend
 
 volumes:
-  postgres-data:
+  postgres-data: #Define un volumen llamado postgres-data para almacenar los datos de la base de datos de forma persistente
 
 networks:
-  fintech-network:
+  fintech-network: #Define una red personalizada llamada fintech-network para permitir la comunicación entre los contenedores frontend, backend y db de forma segura y aislada del resto de la red del host
